@@ -64,12 +64,11 @@ def _extract_coordinate_ranges(region_text: str) -> list[tuple[float, float, flo
     # Split by closing/opening parens and whitespace
     parts = re.findall(r"[\d\.\-]+", coords_str)
 
-    ranges = []
-    for i in range(0, len(parts), 4):
-        if i + 3 < len(parts):
-            ranges.append((float(parts[i]), float(parts[i + 1]), float(parts[i + 2]), float(parts[i + 3])))
-
-    return ranges
+    return [
+        (float(parts[i]), float(parts[i + 1]), float(parts[i + 2]), float(parts[i + 3]))
+        for i in range(0, len(parts), 4)
+        if i + 3 < len(parts)
+    ]
 
 
 def _apply_position_perturbation(region_text: str, perturbation_type: str, seed: str) -> str:
@@ -94,33 +93,35 @@ def _apply_position_perturbation(region_text: str, perturbation_type: str, seed:
         return region_text
 
     # Parse all coordinate ranges in this region as (x1, y1, x2, y2)
-    ranges = []
-    for i in range(0, len(parts), 4):
-        if i + 3 < len(parts):
-            ranges.append((float(parts[i]), float(parts[i + 1]), float(parts[i + 2]), float(parts[i + 3])))
+    ranges = [
+        (float(parts[i]), float(parts[i + 1]), float(parts[i + 2]), float(parts[i + 3]))
+        for i in range(0, len(parts), 4)
+        if i + 3 < len(parts)
+    ]
 
     # Apply perturbation
     perturbed_ranges = []
     for x1, y1, x2, y2 in ranges:
-        width = x2 - x1
-        height = y2 - y1
+        x1_adj, y1_adj, x2_adj, y2_adj = x1, y1, x2, y2
+        width = x2_adj - x1_adj
+        height = y2_adj - y1_adj
 
         if width < 0 or height < 0:
             # Defensive fallback: normalize malformed inputs before perturbation.
-            x1, x2 = min(x1, x2), max(x1, x2)
-            y1, y2 = min(y1, y2), max(y1, y2)
-            width = x2 - x1
-            height = y2 - y1
+            x1_adj, x2_adj = min(x1_adj, x2_adj), max(x1_adj, x2_adj)
+            y1_adj, y2_adj = min(y1_adj, y2_adj), max(y1_adj, y2_adj)
+            width = x2_adj - x1_adj
+            height = y2_adj - y1_adj
 
         if perturbation_type == "shift":
             # ±10% workspace shift
-            shift_mag = _det_choice(f"{seed}_{x1}_{y1}_shift", "shift_mag", [0.04, 0.03])
-            x_shift = _det_choice(f"{seed}_{x1}_shift_x", "shift_x", [-shift_mag, shift_mag])
-            y_shift = _det_choice(f"{seed}_{y1}_shift_y", "shift_y", [-shift_mag, shift_mag])
-            perturbed = (x1 + x_shift, y1 + y_shift, x2 + x_shift, y2 + y_shift)
+            shift_mag = _det_choice(f"{seed}_{x1_adj}_{y1_adj}_shift", "shift_mag", [0.04, 0.03])
+            x_shift = _det_choice(f"{seed}_{x1_adj}_shift_x", "shift_x", [-shift_mag, shift_mag])
+            y_shift = _det_choice(f"{seed}_{y1_adj}_shift_y", "shift_y", [-shift_mag, shift_mag])
+            perturbed = (x1_adj + x_shift, y1_adj + y_shift, x2_adj + x_shift, y2_adj + y_shift)
 
         else:
-            perturbed = (x1, y1, x2, y2)
+            perturbed = (x1_adj, y1_adj, x2_adj, y2_adj)
 
         # Guarantee valid rectangle ordering required by LIBERO assertion.
         px1, py1, px2, py2 = perturbed
@@ -133,9 +134,7 @@ def _apply_position_perturbation(region_text: str, perturbation_type: str, seed:
 
     # Use ranges_match.end() (not end(1)) to skip the original coord ")" consumed by the regex,
     # preventing a duplicate closing paren in the output.
-    perturbed_text = region_text[: ranges_match.start(1)] + ranges_str + region_text[ranges_match.end() :]
-
-    return perturbed_text
+    return region_text[: ranges_match.start(1)] + ranges_str + region_text[ranges_match.end() :]
 
 
 def rewrite_position_instruction(bddl_content: str, perturbation_type: str = "shift") -> str:
@@ -195,9 +194,7 @@ def rewrite_position_instruction(bddl_content: str, perturbation_type: str = "sh
 
     # Reconstruct full BDDL
     perturbed_regions = "\n".join(perturbed_lines)
-    result = "\n".join(lines[:start_idx]) + "\n" + perturbed_regions + "\n" + "\n".join(lines[end_idx + 1 :])
-
-    return result
+    return "\n".join(lines[:start_idx]) + "\n" + perturbed_regions + "\n" + "\n".join(lines[end_idx + 1 :])
 
 
 def rewrite_position_variants(bddl_content: str) -> dict[str, str]:

@@ -130,9 +130,10 @@ def _extract_existing_indices(current_objects: list[str]) -> dict[str, set[int]]
 def _choose_distractor_support(
     bddl_content: str, init_text: str, goal_objects: set[str], distractor_obj: str
 ) -> str | None:
-    regions = []
-    for match in re.finditer(r"\(\s*([a-zA-Z0-9_]+)\s*\n\s*\(:target\s+([a-zA-Z0-9_]+)\)", bddl_content):
-        regions.append(f"{match.group(2)}_{match.group(1)}")
+    regions = [
+        f"{match.group(2)}_{match.group(1)}"
+        for match in re.finditer(r"\(\s*([a-zA-Z0-9_]+)\s*\n\s*\(:target\s+([a-zA-Z0-9_]+)\)", bddl_content)
+    ]
 
     used_regions = set()
     for line in init_text.splitlines():
@@ -208,13 +209,14 @@ def _add_distractor_objects(bddl_content: str, num_distractors: int = 1) -> str:
     new_objects_lines = []
     type_found = False
     for line in objects_text.splitlines():
+        updated_line = line
         if "-" in line and not type_found:
             parts = line.split("-")
             if parts[1].strip() == selected_type:
                 # Insert the new object right before the hyphen
-                line = f"{parts[0].rstrip()} {distractor_obj} - {parts[1].strip()}"
+                updated_line = f"{parts[0].rstrip()} {distractor_obj} - {parts[1].strip()}"
                 type_found = True
-        new_objects_lines.append(line)
+        new_objects_lines.append(updated_line)
 
     if type_found:
         new_objects_text = "\n".join(new_objects_lines)
@@ -237,9 +239,7 @@ def _add_distractor_objects(bddl_content: str, num_distractors: int = 1) -> str:
         return new_bddl
 
     new_init_text = init_text.rstrip(")").rstrip() + f"\n    (On {distractor_obj} {support})\n  )"
-    new_bddl = new_bddl.replace(init_text, new_init_text, 1)
-
-    return new_bddl
+    return new_bddl.replace(init_text, new_init_text, 1)
 
 
 def rewrite_object_instruction(bddl_content: str, perturbation_type: str = "add_distractor") -> str:

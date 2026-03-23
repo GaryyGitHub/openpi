@@ -86,9 +86,7 @@ def main(
     # You can modify this for your own data format
     for raw_dataset_name in RAW_DATASET_NAMES:
         raw_dataset = tfds.load(raw_dataset_name, data_dir=data_dir, split="train")
-        episode_count = 0
-        for episode in raw_dataset:
-            episode_count += 1
+        for episode_count, episode in enumerate(raw_dataset, start=1):
             step_count = 0
             for step in episode["steps"].as_numpy_iterator():
                 step_count += 1

@@ -7,7 +7,7 @@ class EvalStats(_subscriber.Subscriber):
         self._max_score = max_score
         self.total_score = 0.0
         self.total_count = 0
-        self.episode_scores = []  # 新增：记录每个 episode 的得分
+        self.episode_scores = []  # 新增: 记录每个 episode 的得分
 
     def on_episode_start(self) -> None:
         pass

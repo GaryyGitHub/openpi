@@ -99,6 +99,7 @@ def _build_semantic_variants(
     bddl_content: str,
     semantic_variants: list[str],
     llm_refiner: GeminiInstructionRefiner | None,
+    *,
     llm_enabled: bool,
     llm_variants: set[str],
     llm_status_counts: dict[str, int],
@@ -123,10 +124,7 @@ def _build_semantic_variants(
         if llm_enabled and llm_refiner is not None and variant in llm_variants:
             rewritten, llm_status = llm_refiner.refine(original_instruction, stage1_rewritten, variant)
             llm_status_counts[llm_status] = llm_status_counts.get(llm_status, 0) + 1
-            if llm_status == "accepted":
-                source = "llm"
-            else:
-                source = f"rule({llm_status})"
+            source = "llm" if llm_status == "accepted" else f"rule({llm_status})"
 
         source_counts[source] = source_counts.get(source, 0) + 1
         variant_source_counts.setdefault(variant, {})
@@ -143,6 +141,7 @@ def build_multi_perturbation_variants(
     bddl_content: str,
     semantic_variants: list[str],
     llm_refiner: GeminiInstructionRefiner | None,
+    *,
     llm_enabled: bool,
     llm_variants: set[str],
     perturbation_types: list[str],
@@ -191,7 +190,8 @@ def main(
     suites: list[str] | None = None,
     perturbation_types: list[str] | None = None,
     semantic_variants: list[str] | None = None,
-    enable_llm_stage: bool = False,  # 如果需要llm介入，要--enable-llm-stage，并且确保gemini_api_key正确配置
+    *,
+    enable_llm_stage: bool = False,  # 如果需要llm介入, 要--enable-llm-stage, 并且确保gemini_api_key正确配置
     llm_variants: list[str] | None = None,
     gemini_api_key: str | None = None,
     gemini_api_base: str = "https://api2.xcodecli.com/",

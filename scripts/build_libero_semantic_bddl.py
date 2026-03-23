@@ -125,10 +125,7 @@ def main(args: Args) -> None:
                 if use_llm_stage and variant in llm_variants:
                     rewritten, llm_status = llm_refiner.refine(original_instruction, rewritten, variant)
                     llm_status_counts[llm_status] = llm_status_counts.get(llm_status, 0) + 1
-                    if llm_status == "accepted":
-                        source = "llm"
-                    else:
-                        source = f"rule({llm_status})"
+                    source = "llm" if llm_status == "accepted" else f"rule({llm_status})"
 
                     if len(llm_samples) < args.log_llm_samples:
                         llm_samples.append(

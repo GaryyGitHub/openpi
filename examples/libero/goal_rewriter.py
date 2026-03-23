@@ -420,7 +420,7 @@ def _add_ordering_constraint(bddl_content: str, det_key: str = "goal_extra_const
             init_pairs.append(match.groups())
 
     init_constraints = {f"(On {obj_name} {support})" for obj_name, support in init_pairs}
-    init_support_by_obj = {obj_name: support for obj_name, support in init_pairs}
+    init_support_by_obj = dict(init_pairs)
 
     # Candidate support pool is derived from existing stable table regions.
     region_supports = sorted({support for _, support in init_pairs if support.endswith("_region")})
@@ -521,8 +521,8 @@ def _change_target_surface(bddl_content: str) -> str:
         )
 
     all_regions = sorted(set(re.findall(r"\b([a-z_][a-z0-9_]*_region)\b", bddl_content.lower())))
-    all_on_targets = sorted(set(t for _, _, t in re.findall(r"\((On)\s+([^\s\)]+)\s+([^\s\)]+)\)", bddl_content)))
-    all_in_targets = sorted(set(t for _, _, t in re.findall(r"\((In)\s+([^\s\)]+)\s+([^\s\)]+)\)", bddl_content)))
+    all_on_targets = sorted({t for _, _, t in re.findall(r"\((On)\s+([^\s\)]+)\s+([^\s\)]+)\)", bddl_content)})
+    all_in_targets = sorted({t for _, _, t in re.findall(r"\((In)\s+([^\s\)]+)\s+([^\s\)]+)\)", bddl_content)})
 
     def _parse_simple_constraint(constraint: str):
         m = re.match(r"^\((On|In|Open|Close|Turnon|Turnoff)\s+([^\s\)]+)(?:\s+([^\s\)]+))?\)$", constraint.strip())
@@ -546,9 +546,7 @@ def _change_target_surface(bddl_content: str) -> str:
             family_keywords = ["contain_region"]
         elif "heating_region" in current:
             family_keywords = ["heating_region", "cook_region"]
-        elif (
-            current.endswith("_top_region") or current.endswith("_middle_region") or current.endswith("_bottom_region")
-        ):
+        elif current.endswith(("_top_region", "_middle_region", "_bottom_region")):
             family_keywords = ["_top_region", "_middle_region", "_bottom_region"]
         elif current.endswith("_back_contain_region"):
             family_keywords = ["contain_region", "_back_region", "_front_region"]
@@ -562,13 +560,10 @@ def _change_target_surface(bddl_content: str) -> str:
                 r
                 for r in all_regions
                 if (
-                    ("contain_region" in r)
-                    or ("heating_region" in r)
-                    or ("cook_region" in r)
-                    or r.endswith("_top_region")
-                    or r.endswith("_middle_region")
-                    or r.endswith("_bottom_region")
-                    or r.endswith("_back_region")
+                    "contain_region" in r
+                    or "heating_region" in r
+                    or "cook_region" in r
+                    or r.endswith(("_top_region", "_middle_region", "_bottom_region", "_back_region"))
                 )
                 and ("init_region" not in r)
             ]
@@ -629,7 +624,7 @@ def _change_target_surface(bddl_content: str) -> str:
 
         appliance_like = {"stove", "microwave", "oven", "burner", "light", "lamp"}
         storage_like = {"cabinet", "drawer", "fridge"}
-        lower_operand = operand.lower()
+        operand.lower()
 
         if pred in {"Turnon", "Turnoff"}:
             candidates = [
@@ -660,8 +655,7 @@ def _change_target_surface(bddl_content: str) -> str:
 
         new_goal = goal_text.replace(old_constraint, new_constraint, 1)
         lines = bddl_content.split("\n")
-        updated = "\n".join(lines[:start_idx]) + "\n" + new_goal + "\n" + "\n".join(lines[end_idx + 1 :])
-        return updated
+        return "\n".join(lines[:start_idx]) + "\n" + new_goal + "\n" + "\n".join(lines[end_idx + 1 :])
 
     # Priority: constraint that directly involves main_obj -> any supported constraint.
     ordered_constraints = []
@@ -686,8 +680,7 @@ def _change_target_surface(bddl_content: str) -> str:
             if updated != bddl_content:
                 updated = _update_language_target(updated, alt)
                 updated = _set_language_change_target(updated, new_constraint)
-                updated = _sync_obj_of_interest_with_goal(updated)
-                return updated
+                return _sync_obj_of_interest_with_goal(updated)
 
         if pred == "In" and arg2 is not None:
             in_choice = _choose_alt_for_in(arg1, arg2)
@@ -699,15 +692,13 @@ def _change_target_surface(bddl_content: str) -> str:
                 updated = _replace_goal_constraint(old_constraint, new_constraint)
                 if updated != bddl_content:
                     updated = _set_language_change_target(updated, new_constraint)
-                    updated = _sync_obj_of_interest_with_goal(updated)
-                    return updated
+                    return _sync_obj_of_interest_with_goal(updated)
             else:
                 new_constraint = f"(In {alt} {arg2})"
                 updated = _replace_goal_constraint(old_constraint, new_constraint)
                 if updated != bddl_content:
                     updated = _set_language_change_target(updated, new_constraint)
-                    updated = _sync_obj_of_interest_with_goal(updated)
-                    return updated
+                    return _sync_obj_of_interest_with_goal(updated)
 
         if pred in {"Open", "Close", "Turnon", "Turnoff"}:
             alt_operand = _choose_alt_for_unary(pred, arg1)
@@ -721,8 +712,7 @@ def _change_target_surface(bddl_content: str) -> str:
                 updated = _replace_goal_constraint(old_constraint, new_constraint)
                 if updated != bddl_content:
                     updated = _set_language_change_target(updated, new_constraint)
-                    updated = _sync_obj_of_interest_with_goal(updated)
-                    return updated
+                    return _sync_obj_of_interest_with_goal(updated)
 
     return bddl_content
 
@@ -768,7 +758,11 @@ def _add_negative_constraint(bddl_content: str) -> str:
 
 
 def rewrite_goal_instruction(
-    bddl_content: str, perturbation_type: str = "change_target", llm_refiner=None, llm_enabled: bool = False
+    bddl_content: str,
+    perturbation_type: str = "change_target",
+    llm_refiner=None,
+    *,
+    llm_enabled: bool = False,
 ) -> str:
     """Rewrite BDDL task with goal perturbation.
 
@@ -795,7 +789,11 @@ def rewrite_goal_instruction(
 
 
 def rewrite_goal_variants(
-    bddl_content: str, num_variants: int = 2, llm_refiner=None, llm_enabled: bool = False
+    bddl_content: str,
+    num_variants: int = 2,
+    llm_refiner=None,
+    *,
+    llm_enabled: bool = False,
 ) -> dict[str, str]:
     """Generate multiple goal variants.
 
@@ -812,5 +810,11 @@ def rewrite_goal_variants(
     perturbation_types = ["change_target", "add_constraint"][:num_variants]
 
     return {
-        ptype: rewrite_goal_instruction(bddl_content, ptype, llm_refiner, llm_enabled) for ptype in perturbation_types
+        ptype: rewrite_goal_instruction(
+            bddl_content,
+            ptype,
+            llm_refiner,
+            llm_enabled=llm_enabled,
+        )
+        for ptype in perturbation_types
     }

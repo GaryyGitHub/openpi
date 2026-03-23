@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-用法：python scripts/summarize_checkpoint.py /data/gaoming/openpi/checkpoints/pi05_libero/libero_lora_2/29999/params --top 8 --csv /data/gaoming/openpi/checkpoints/pi05_libero/libero_lora_2/29999
-输入为array_metadatas，输出参数统计信息，路径为checkpoint下的params目录
+用法: python scripts/summarize_checkpoint.py /data/gaoming/openpi/checkpoints/pi05_libero/libero_lora_2/29999/params --top 8 --csv /data/gaoming/openpi/checkpoints/pi05_libero/libero_lora_2/29999
+输入为array_metadatas, 输出参数统计信息, 路径为checkpoint下的params目录
 """
 
 import argparse
@@ -129,10 +129,7 @@ def main():
         if ".lora_a" in n and len(shape) > 0:
             r = shape[-1]
             lora_ranks[r] += 1
-    if lora_ranks:
-        ranks_str = ", ".join(f"rank={r} (count={c})" for r, c in sorted(lora_ranks.items()))
-    else:
-        ranks_str = "none"
+    ranks_str = ", ".join(f"rank={r} (count={c})" for r, c in sorted(lora_ranks.items())) if lora_ranks else "none"
     print(f"LoRA ranks observed: {ranks_str}")
 
     # Optional CSV outputs

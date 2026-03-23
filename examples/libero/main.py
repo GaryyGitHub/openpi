@@ -302,7 +302,7 @@ if __name__ == "__main__":
     # Configure logging to both console and file
     log_dir = pathlib.Path("logs/libero")
     log_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
     log_file = (
         log_dir / f"eval_{timestamp}_{args.task_suite_name}_{args.perturbation_type}_{_selected_variant(args)}.log"
     )

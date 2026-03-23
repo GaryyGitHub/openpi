@@ -125,10 +125,10 @@ class GeminiInstructionRefiner:
 
     def _build_prompt(self, original: str, stage1_text: str, variant: str) -> str:
         variant_spec = {
-            "paraphrase": "同义改写，保留任务目标、对象和空间关系。",
-            "constraint": "加入轻量过程约束（不改变目标）。",
-            "reference": "加入上下文或指代表达（不改变目标）。",
-            "noisy": "加入自然口语噪声词（不改变目标）。",
+            "paraphrase": "同义改写, 保留任务目标、对象和空间关系。",
+            "constraint": "加入轻量过程约束(不改变目标)。",
+            "reference": "加入上下文或指代表达(不改变目标)。",
+            "noisy": "加入自然口语噪声词(不改变目标)。",
         }.get(variant, "保持语义不变进行自然改写。")
 
         return (

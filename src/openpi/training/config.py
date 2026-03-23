@@ -742,7 +742,7 @@ _CONFIGS = [
             action_expert_variant="gemma_300m_lora",
         ),
         data=LeRobotLiberoDataConfig(
-            # 原来是physical-intelligence/libero，替换成了本地路径
+            # 原来是physical-intelligence/libero, 替换成了本地路径
             repo_id="GaryBUAA/libero",
             base_config=DataConfig(prompt_from_task=True),
             extra_delta_transform=False,
