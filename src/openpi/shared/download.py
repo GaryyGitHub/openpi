@@ -100,7 +100,30 @@ def maybe_download(url: str, *, force_download: bool = False, **kwargs) -> pathl
 
 def _download_fsspec(url: str, local_path: pathlib.Path, **kwargs) -> None:
     """Download a file from a remote filesystem to the local cache, and return the local path."""
-    fs, _ = fsspec.core.url_to_fs(url, **kwargs)
+    # Prefer anonymous access for public GCS buckets unless the caller explicitly
+    # provided authentication settings. This avoids gcsfs trying to use
+    # Compute Engine credentials on non-GCP machines, which can raise errors
+    # like: "TypeError: string indices must be integers, not 'str'".
+    parsed = urllib.parse.urlparse(url)
+    effective_kwargs = dict(kwargs)
+    if parsed.scheme in {"gs", "gcs"}:
+        # If neither explicit token nor environment override is provided, default to anon.
+        has_explicit_token = "token" in effective_kwargs
+        has_env_override = os.getenv("GCSFS_TOKEN") is not None
+        if not has_explicit_token and not has_env_override:
+            effective_kwargs["token"] = "anon"
+
+    # First attempt with the effective kwargs; if it fails due to auth issues on GCS,
+    # retry once with anonymous token.
+    try:
+        fs, _ = fsspec.core.url_to_fs(url, **effective_kwargs)
+    except Exception as e:
+        # Best-effort fallback for GCS-only auth problems.
+        if parsed.scheme in {"gs", "gcs"} and effective_kwargs.get("token") != "anon":
+            logger.info("Falling back to anonymous GCS access for %s due to: %s", url, type(e).__name__)
+            fs, _ = fsspec.core.url_to_fs(url, token="anon")
+        else:
+            raise
     info = fs.info(url)
     # Folders are represented by 0-byte objects with a trailing forward slash.
     if is_dir := (info["type"] == "directory" or (info["size"] == 0 and info["name"].endswith("/"))):

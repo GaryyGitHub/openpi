@@ -54,3 +54,9 @@ class AlohaSimEnvironment(_environment.Environment):
             "state": gym_obs["agent_pos"],
             "images": {"cam_high": img},
         }
+
+    def get_episode_score(self) -> float:
+        return float(self._episode_reward)
+
+    def get_episode_success(self, threshold: float = 3.0) -> bool:
+        return self._episode_reward >= threshold

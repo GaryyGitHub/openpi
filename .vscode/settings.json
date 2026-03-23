@@ -7,5 +7,11 @@
         "src"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /home/gaoming/openpi && python - <<'PY'\nimport pathlib, re\np = pathlib\\.Path\\('third_party/libero/libero/libero/bddl_files_multiperturbation/libero_spatial/pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate__goal_change_target\\.bddl'\\)\ncontent = p\\.read_text\\(encoding='utf-8'\\)\nm = re\\.search\\(r'\\\\\\(:language\\\\s\\+\\(\\[\\^\\\\n\\\\\\)\\]\\+\\)\\\\\\)', content\\)\nprint\\(m\\.group\\(1\\)\\.strip\\(\\) if m else 'NONE'\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }
