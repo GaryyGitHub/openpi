@@ -5,7 +5,6 @@ import json
 import pathlib
 import re
 
-
 SUPPORTED_VARIANTS = {"none", "paraphrase", "constraint", "reference", "noisy"}
 
 
@@ -45,9 +44,7 @@ def load_semantic_manifest(manifest_path: str | None) -> dict[str, dict[str, str
 def rewrite_instruction(instruction: str, variant: str, manifest: dict[str, dict[str, str]] | None = None) -> str:
     normalized_variant = variant.strip().lower()
     if normalized_variant not in SUPPORTED_VARIANTS:
-        raise ValueError(
-            f"Unknown semantic variant: {variant}. Supported variants: {sorted(SUPPORTED_VARIANTS)}"
-        )
+        raise ValueError(f"Unknown semantic variant: {variant}. Supported variants: {sorted(SUPPORTED_VARIANTS)}")
 
     if normalized_variant == "none":
         return instruction
@@ -84,7 +81,7 @@ def _paraphrase_instruction(text: str, lower_text: str) -> str:
     if pick_match:
         obj = pick_match.group("object")
         destination = _replace_spatial_phrase(pick_match.group("destination"), text)
-        pick_verb = _det_choice(text, "pick_verb", ["pick up", "grasp", "take"]) 
+        pick_verb = _det_choice(text, "pick_verb", ["pick up", "grasp", "take"])
         place_verb = _det_choice(text, "place_verb", ["place", "set", "position"])
         templates = [
             f"{pick_verb} {obj} and {place_verb} it {destination}",
@@ -255,7 +252,7 @@ def _extract_destination_phrase(lower_text: str) -> str | None:
 
 
 def _det_choice(seed_text: str, key: str, options: list[str]) -> str:
-    digest = hashlib.sha256(f"{seed_text}|{key}".encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(f"{seed_text}|{key}".encode()).hexdigest()
     index = int(digest[:8], 16) % len(options)
     return options[index]
 

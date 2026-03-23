@@ -12,7 +12,6 @@ from examples.libero.gemini_rewriter import GeminiInstructionRefiner
 from examples.libero.semantic_utils import SUPPORTED_VARIANTS
 from examples.libero.semantic_utils import rewrite_instruction
 
-
 LANGUAGE_PATTERN = re.compile(r"\(:language\s+(.+?)\)")
 _BDDL_LANGUAGE_SANITIZE_TABLE = str.maketrans({";": ",", "(": "", ")": ""})
 

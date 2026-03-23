@@ -234,7 +234,7 @@ def _read_language_from_bddl(bddl_path: pathlib.Path, fallback: str) -> str:
     except Exception:
         return fallback
 
-    match = re.search(r'\(:language\s+([^\n\)]+)\)', content)
+    match = re.search(r"\(:language\s+([^\n\)]+)\)", content)
     if not match:
         return fallback
     text = match.group(1).strip()
@@ -302,16 +302,15 @@ if __name__ == "__main__":
     # Configure logging to both console and file
     log_dir = pathlib.Path("logs/libero")
     log_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_file = log_dir / f"eval_{timestamp}_{args.task_suite_name}_{args.perturbation_type}_{_selected_variant(args)}.log"
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = (
+        log_dir / f"eval_{timestamp}_{args.task_suite_name}_{args.perturbation_type}_{_selected_variant(args)}.log"
+    )
 
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s [%(levelname)s] %(message)s',
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler()
-        ]
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
     )
     logging.info(f"Logging to file: {log_file}")
     eval_libero(args)

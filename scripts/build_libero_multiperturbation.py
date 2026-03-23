@@ -16,7 +16,6 @@ import json
 import logging
 from pathlib import Path
 import re
-from typing import Optional
 
 import tyro
 
@@ -26,7 +25,6 @@ from examples.libero.goal_rewriter import rewrite_goal_variants
 from examples.libero.object_rewriter import rewrite_object_variants
 from examples.libero.position_rewriter import rewrite_position_variants
 from examples.libero.semantic_utils import rewrite_instruction
-
 
 LANGUAGE_PATTERN = re.compile(r"\(:language\s+(.+?)\)")
 _BDDL_LANGUAGE_SANITIZE_TABLE = str.maketrans({";": ",", "(": "", ")": ""})
@@ -49,7 +47,7 @@ LIBERO_SUITES = {
 
 
 def load_bddl_file(bddl_path: Path) -> str:
-    with open(bddl_path, "r", encoding="utf-8") as f:
+    with open(bddl_path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -76,7 +74,7 @@ def _replace_language_line(content: str, new_language: str) -> str:
     return f"{content[:start]}{safe_language}{content[end:]}"
 
 
-def _validate_bddl_content(content: str) -> tuple[bool, Optional[str]]:
+def _validate_bddl_content(content: str) -> tuple[bool, str | None]:
     """Basic BDDL validation to avoid writing obviously broken files.
 
     Checks:
@@ -100,7 +98,7 @@ def _validate_bddl_content(content: str) -> tuple[bool, Optional[str]]:
 def _build_semantic_variants(
     bddl_content: str,
     semantic_variants: list[str],
-    llm_refiner: Optional[GeminiInstructionRefiner],
+    llm_refiner: GeminiInstructionRefiner | None,
     llm_enabled: bool,
     llm_variants: set[str],
     llm_status_counts: dict[str, int],
@@ -144,16 +142,16 @@ def _build_semantic_variants(
 def build_multi_perturbation_variants(
     bddl_content: str,
     semantic_variants: list[str],
-    llm_refiner: Optional[GeminiInstructionRefiner],
+    llm_refiner: GeminiInstructionRefiner | None,
     llm_enabled: bool,
     llm_variants: set[str],
     perturbation_types: list[str],
     llm_status_counts: dict[str, int],
     source_counts: dict[str, int],
     variant_source_counts: dict[str, dict[str, int]],
-) -> tuple[dict[str, dict[str, str]], Optional[dict[str, dict[str, str]]]]:
+) -> tuple[dict[str, dict[str, str]], dict[str, dict[str, str]] | None]:
     variants: dict[str, dict[str, str]] = {}
-    semantic_manifest_item: Optional[dict[str, dict[str, str]]] = None
+    semantic_manifest_item: dict[str, dict[str, str]] | None = None
 
     if "semantic" in perturbation_types:
         semantic_vars, semantic_manifest_item = _build_semantic_variants(
@@ -190,12 +188,12 @@ def main(
     libero_root: Path = Path("/home/gaoming/openpi/third_party/libero/libero/libero"),
     output_root: Path = Path("/home/gaoming/openpi/third_party/libero/libero/libero/bddl_files_multiperturbation"),
     manifest_path: Path = Path("/home/gaoming/openpi/libero_data/libero_multiperturbation_variants.json"),
-    suites: Optional[list[str]] = None,
-    perturbation_types: Optional[list[str]] = None,
-    semantic_variants: Optional[list[str]] = None,
-    enable_llm_stage: bool = False,         # 如果需要llm介入，要--enable-llm-stage，并且确保gemini_api_key正确配置
-    llm_variants: Optional[list[str]] = None,
-    gemini_api_key: Optional[str] = None,
+    suites: list[str] | None = None,
+    perturbation_types: list[str] | None = None,
+    semantic_variants: list[str] | None = None,
+    enable_llm_stage: bool = False,  # 如果需要llm介入，要--enable-llm-stage，并且确保gemini_api_key正确配置
+    llm_variants: list[str] | None = None,
+    gemini_api_key: str | None = None,
     gemini_api_base: str = "https://api2.xcodecli.com/",
     gemini_model: str = "gemini-2.5-flash",
     gemini_temperature: float = 0.2,
@@ -336,8 +334,7 @@ def main(
 
                 manifest_data["by_suite"][suite][task_name] = {
                     "perturbation_counts": {
-                        ptype: max(0, len(ptype_vars) - 1)
-                        for ptype, ptype_vars in all_variants.items()
+                        ptype: max(0, len(ptype_vars) - 1) for ptype, ptype_vars in all_variants.items()
                     },
                     "total_variants": sum(max(0, len(ptype_vars) - 1) for ptype_vars in all_variants.values()),
                 }
@@ -348,7 +345,9 @@ def main(
                         "variants": semantic_manifest_item["variants"],
                         "variant_source": semantic_manifest_item["variant_source"],
                     }
-                    manifest_data["by_instruction"][semantic_manifest_item["original"]] = semantic_manifest_item["variants"]
+                    manifest_data["by_instruction"][semantic_manifest_item["original"]] = semantic_manifest_item[
+                        "variants"
+                    ]
 
                 processed_tasks += 1
                 if (idx + 1) % log_progress_every == 0:

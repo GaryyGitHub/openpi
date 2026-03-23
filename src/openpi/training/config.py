@@ -734,7 +734,13 @@ _CONFIGS = [
     TrainConfig(
         name="pi05_libero",
         # model=pi0_config.Pi0Config(pi05=True, action_horizon=10, discrete_state_input=False),
-        model=pi0_config.Pi0Config(pi05=True, action_horizon=10, discrete_state_input=False, paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
+        model=pi0_config.Pi0Config(
+            pi05=True,
+            action_horizon=10,
+            discrete_state_input=False,
+            paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+        ),
         data=LeRobotLiberoDataConfig(
             # 原来是physical-intelligence/libero，替换成了本地路径
             repo_id="GaryBUAA/libero",

@@ -3,11 +3,12 @@
 用法：python scripts/summarize_checkpoint.py /data/gaoming/openpi/checkpoints/pi05_libero/libero_lora_2/29999/params --top 8 --csv /data/gaoming/openpi/checkpoints/pi05_libero/libero_lora_2/29999
 输入为array_metadatas，输出参数统计信息，路径为checkpoint下的params目录
 """
+
 import argparse
+from collections import defaultdict
 import csv
 import json
 from pathlib import Path
-from collections import defaultdict
 
 
 def product(shape):
@@ -34,7 +35,7 @@ def collect_array_metadatas(params_dir: Path):
 
 def _read_process_file(proc_file: Path):
     try:
-        with open(proc_file, "r") as f:
+        with open(proc_file) as f:
             data = json.load(f)
     except Exception as e:
         print(f"Warning: failed to read {proc_file}: {e}")
@@ -50,11 +51,13 @@ def _read_process_file(proc_file: Path):
 
 def main():
     ap = argparse.ArgumentParser(description="Summarize parameter counts from OpenPI checkpoint metadatas")
-    ap.add_argument("checkpoint_params_dir", type=Path,
-                    help="Path to the params directory (e.g., checkpoints/.../params)")
+    ap.add_argument(
+        "checkpoint_params_dir", type=Path, help="Path to the params directory (e.g., checkpoints/.../params)"
+    )
     ap.add_argument("--top", type=int, default=10, help="Show top-N largest arrays")
-    ap.add_argument("--csv", type=Path, default=None,
-                    help="Directory to write CSV outputs (params_breakdown.csv, summary.csv)")
+    ap.add_argument(
+        "--csv", type=Path, default=None, help="Directory to write CSV outputs (params_breakdown.csv, summary.csv)"
+    )
     args = ap.parse_args()
 
     # Aggregate element counts per param across processes (sum shards)
@@ -83,9 +86,11 @@ def main():
         return ".img." in n
 
     def is_action_proj(n):
-        return any(k in n for k in ["params.action_in_proj", "params.action_out_proj", "params.state_proj"]) \
-            or any(k in n for k in ["params.time_mlp_in", "params.time_mlp_out"]) \
+        return (
+            any(k in n for k in ["params.action_in_proj", "params.action_out_proj", "params.state_proj"])
+            or any(k in n for k in ["params.time_mlp_in", "params.time_mlp_out"])
             or n.startswith("params.action_")
+        )
 
     lora = sum(c for n, c in per_param_counts.items() if is_lora(n))
     non_lora = total - lora
@@ -139,13 +144,15 @@ def main():
         params_csv = out_dir / "params_breakdown.csv"
         with open(params_csv, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                "param_name",
-                "elements",
-                "shape",
-                "is_lora",
-                "module",
-            ])
+            writer.writerow(
+                [
+                    "param_name",
+                    "elements",
+                    "shape",
+                    "is_lora",
+                    "module",
+                ]
+            )
             for n, c in sorted(per_param_counts.items(), key=lambda kv: kv[0]):
                 if is_llm_main(n):
                     module = "llm_main"
@@ -157,13 +164,15 @@ def main():
                     module = "proj"
                 else:
                     module = "other"
-                writer.writerow([
-                    n,
-                    c,
-                    "x".join(str(x) for x in per_param_shape_examples[n]),
-                    1 if is_lora(n) else 0,
-                    module,
-                ])
+                writer.writerow(
+                    [
+                        n,
+                        c,
+                        "x".join(str(x) for x in per_param_shape_examples[n]),
+                        1 if is_lora(n) else 0,
+                        module,
+                    ]
+                )
 
         # Summary CSV
         summary_csv = out_dir / "summary.csv"

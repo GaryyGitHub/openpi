@@ -7,7 +7,6 @@ import re
 import urllib.error
 import urllib.request
 
-
 _STOPWORDS = {
     "the",
     "and",
@@ -47,9 +46,7 @@ class GeminiInstructionRefiner:
         self.config = config
         self.api_key = config.api_key.strip() or os.getenv("GEMINI_API_KEY", "").strip()
         self.api_base = (
-            config.api_base.strip()
-            or os.getenv("GEMINI_API_BASE", "").strip()
-            or "https://api2.xcodecli.com"
+            config.api_base.strip() or os.getenv("GEMINI_API_BASE", "").strip() or "https://api2.xcodecli.com"
         ).rstrip("/")
 
     @property
